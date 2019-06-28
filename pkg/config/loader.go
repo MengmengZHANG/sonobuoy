@@ -99,6 +99,7 @@ func LoadConfig() (*Config, error) {
 	return cfg, err
 }
 
+// TODO:
 // Validate returns a list of errors for the configuration, if any are found.
 func (cfg *Config) Validate() (errors []error) {
 	if _, defaulted, err := cfg.Limits.PodLogs.sizeLimitBytes(); err != nil && !defaulted {
