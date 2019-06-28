@@ -38,7 +38,7 @@ const (
 
 // Only set values if they have values greater than 0 (as in they user specified).
 func getPodLogOptions(cfg *config.Config) *v1.PodLogOptions {
-	podLogLimits := cfg.Limits.PodLogs
+	podLogLimits := &cfg.Limits.PodLogs
 
 	options := &v1.PodLogOptions{
 		Previous: podLogLimits.Previous,
@@ -62,7 +62,8 @@ func getPodLogOptions(cfg *config.Config) *v1.PodLogOptions {
 }
 
 // gatherPodLogs will loop through collecting pod logs and placing them into a directory tree
-func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListOptions, cfg *config.Config) error {
+func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListOptions, cfg *config.Config,
+	podLogOptions *v1.PodLogOptions) error {
 	// 1 - Collect the list of pods
 	podlist, err := kubeClient.CoreV1().Pods(ns).List(opts)
 	if err != nil {
@@ -70,9 +71,6 @@ func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListO
 	}
 
 	logrus.Infof("Collecting Pod Logs (%v)", ns)
-
-	options := getPodLogOptions(cfg)
-	logrus.Infoln("getPodLogOptions: ", options)
 
 	// 2 - Foreach pod, dump each of its containers' logs in a tree in the following location:
 	//   pods/:podname/logs/:containername.txt
@@ -82,8 +80,8 @@ func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListO
 			continue
 		}
 		for _, container := range pod.Spec.Containers {
-			options.Container = container.Name
-			body, err := kubeClient.CoreV1().Pods(ns).GetLogs(pod.Name, options).DoRaw()
+			podLogOptions.Container = container.Name
+			body, err := kubeClient.CoreV1().Pods(ns).GetLogs(pod.Name, podLogOptions).DoRaw()
 			if err != nil {
 				return errors.WithStack(err)
 			}

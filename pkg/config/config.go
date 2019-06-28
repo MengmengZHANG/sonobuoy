@@ -178,7 +178,6 @@ type PodLogLimits struct {
 	// precedes the time a pod was started, only logs since the pod start will be returned.
 	// If this value is in the future, no logs will be returned.
 	// Only one of sinceSeconds or sinceTime may be specified.
-	// A valid input is either empty string or a string(number).
 	// +optional
 	SinceSeconds *int64 `json:"SinceSeconds" mapstructure:"SinceSeconds"`
 
@@ -196,14 +195,12 @@ type PodLogLimits struct {
 
 	// If set, the number of lines from the end of the logs to show. If not specified,
 	// logs are shown from the creation of the container or sinceSeconds or sinceTime
-	// A valid input is either empty string or a string(number).
 	// +optional
 	TailLines *int64 `json:"TailLines" mapstructure:"TailLines"`
 
 	// If set, the number of bytes to read from the server before terminating the
 	// log output. This may not display a complete final line of logging, and may return
 	// slightly more or slightly less than the specified limit.
-	// A valid input is either empty string or a string(number).
 	// +optional
 	LimitBytes *int64 `json:"LimitBytes" mapstructure:"LimitBytes"`
 

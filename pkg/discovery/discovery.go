@@ -144,13 +144,15 @@ func Run(restConf *rest.Config, cfg *config.Config) (errCount int) {
 		QueryServerData(kubeClient, recorder, cfg),
 	)
 
+	podLogOptions := getPodLogOptions(cfg)
+	logrus.Infoln("PogLogOptions: ", podLogOptions)
 	for _, ns := range nslist {
 		trackErrorsFor("querying resources under namespace " + ns)(
 			QueryResources(apiHelper, recorder, nsResources, &ns, cfg),
 		)
 
 		trackErrorsFor("querying pod logs under namespace " + ns)(
-			QueryPodLogs(kubeClient, recorder, ns, cfg),
+			QueryPodLogs(kubeClient, recorder, ns, cfg, podLogOptions),
 		)
 	}
 

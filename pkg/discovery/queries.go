@@ -17,6 +17,7 @@ limitations under the License.
 package discovery
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"os"
 	"path"
 	"time"
@@ -260,7 +261,8 @@ func filterResources(gvrs map[schema.GroupVersion][]metav1.APIResource, namespac
 }
 
 // QueryPodLogs gets the pod logs for each pod in the given namespace.
-func QueryPodLogs(kubeClient kubernetes.Interface, recorder *QueryRecorder, ns string, cfg *config.Config) error {
+func QueryPodLogs(kubeClient kubernetes.Interface, recorder *QueryRecorder, ns string, cfg *config.Config,
+	podLogOptions *v1.PodLogOptions) error {
 	// Force podlogs gathering in the namespace Sonobuoy is in. Optional otherwise and
 	// based on the Resources value.
 	if cfg.Resources != nil &&
@@ -281,7 +283,7 @@ func QueryPodLogs(kubeClient kubernetes.Interface, recorder *QueryRecorder, ns s
 		}
 	}
 
-	err := gatherPodLogs(kubeClient, ns, opts, cfg)
+	err := gatherPodLogs(kubeClient, ns, opts, cfg, podLogOptions)
 	if err != nil {
 		return err
 	}
