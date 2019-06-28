@@ -167,7 +167,7 @@ type LimitConfig struct {
 	PodLogs PodLogLimits `json:"PodLogs" mapstructure:"PodLogs"`
 }
 
-// PodLogLimits limits the response's scope when getting logs from pods.
+// PodLogLimits limits the scope of response when getting logs from pods.
 // It exposes a subset of k8s.io/api/core/v1/PodLogOptions.
 type PodLogLimits struct {
 	// Return previous terminated container logs. Defaults to false.

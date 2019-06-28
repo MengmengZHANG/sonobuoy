@@ -36,7 +36,7 @@ const (
 	PodLogsLocation = "podlogs"
 )
 
-// Only set values if they have values greater than 0 (as in they user specified).
+// mapping to k8s.io/api/core/v1/PodLogOptions.
 func getPodLogOptions(cfg *config.Config) *v1.PodLogOptions {
 	podLogLimits := &cfg.Limits.PodLogs
 
@@ -49,6 +49,7 @@ func getPodLogOptions(cfg *config.Config) *v1.PodLogOptions {
 		LimitBytes: podLogLimits.LimitBytes,
 	}
 
+	// Only set values if they have values greater than 0 (as in they user specified).
 	limitBytes := podLogLimits.SizeLimitBytes(0)
 	sinceSeconds := int64(podLogLimits.TimeLimitDuration(0) / time.Second)
 	if limitBytes > 0 {
