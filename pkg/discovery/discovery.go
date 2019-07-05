@@ -107,9 +107,8 @@ func Run(restConf *rest.Config, cfg *config.Config) (errCount int) {
 	)
 
 	// 2. Get the list of namespaces and apply the regex filter on the namespace
-	nsfilter := fmt.Sprintf("%s|%s", cfg.Filters.Namespaces, cfg.Namespace)
-	logrus.Infof("Filtering namespaces based on the following regex:%s", nsfilter)
-	nslist, err := FilterNamespaces(kubeClient, nsfilter)
+	logrus.Infof("Filtering namespaces based on the following regex:%s",  cfg.Filters.Namespaces)
+	nslist, err := FilterNamespaces(kubeClient,  cfg.Filters.Namespaces)
 	if err != nil {
 		errlog.LogError(errors.Wrap(err, "could not filter namespaces"))
 		return errCount + 1
@@ -148,10 +147,37 @@ func Run(restConf *rest.Config, cfg *config.Config) (errCount int) {
 		trackErrorsFor("querying resources under namespace " + ns)(
 			QueryResources(apiHelper, recorder, nsResources, &ns, cfg),
 		)
+	}
+	logrus.Infoln("before mod cfg.Limits.PodLogs: ", cfg.Limits.PodLogs)
 
-		trackErrorsFor("querying pod logs under namespace " + ns)(
-			QueryPodLogs(kubeClient, recorder, ns, cfg),
-		)
+	// query pod logs
+	if cfg.Resources == nil || sliceContains(cfg.Resources, "podlogs") {
+		var nsfilter string
+		if len(cfg.Limits.PodLogs.Namespaces) > 0 {
+			nsfilter = cfg.Limits.PodLogs.Namespaces
+		}
+		if cfg.Limits.PodLogs.SonobuoyNamespace {
+			if len(nsfilter) > 0 {
+				nsfilter = fmt.Sprintf("%s|%s", nsfilter, cfg.Namespace)
+			} else {
+				nsfilter = cfg.Namespace
+			}
+		}
+		if len(nsfilter) > 0 {
+			nsListLogs, _ := FilterNamespaces(kubeClient,  nsfilter)
+			for _, ns := range nsListLogs {
+				cfg.Limits.PodLogs.FieldSelectors = append(cfg.Limits.PodLogs.FieldSelectors, "metadata.namespace=" + ns)
+			}
+		}
+		logrus.Infof("after mod cfg.Limits.PodLogs: ", cfg.Limits.PodLogs)
+		nsListLogs, _ := FilterNamespaces(kubeClient,  ".*")
+		for _, ns := range nsListLogs {
+			trackErrorsFor("querying pod logs under namespace " + ns)(
+				QueryPodLogs(kubeClient, recorder, ns, cfg),
+			)
+		}
+	} else {
+		logrus.Infof("podlogs not specified in non-nil Resources, skipping getting podlogs")
 	}
 
 	// 6. Dump the query times

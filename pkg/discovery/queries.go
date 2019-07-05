@@ -167,9 +167,6 @@ func QueryResources(
 			opts.LabelSelector = cfg.Filters.LabelSelector
 		}
 	}
-	if ns != nil && len(*ns) > 0 {
-		opts.FieldSelector = "metadata.namespace=" + *ns
-	}
 
 	// 3. Execute the query
 	for _, gvr := range resources {
@@ -261,15 +258,6 @@ func filterResources(gvrs map[schema.GroupVersion][]metav1.APIResource, namespac
 
 // QueryPodLogs gets the pod logs for each pod in the given namespace.
 func QueryPodLogs(kubeClient kubernetes.Interface, recorder *QueryRecorder, ns string, cfg *config.Config) error {
-	// Force podlogs gathering in the namespace Sonobuoy is in. Optional otherwise and
-	// based on the Resources value.
-	if cfg.Resources != nil &&
-		!sliceContains(cfg.Resources, "podlogs") &&
-		ns != cfg.Namespace {
-		logrus.Infof("podlogs not specified in non-nil Resources, only getting podlogs for namespace %v", cfg.Namespace)
-		return nil
-	}
-
 	start := time.Now()
 
 	opts := metav1.ListOptions{}
@@ -281,12 +269,18 @@ func QueryPodLogs(kubeClient kubernetes.Interface, recorder *QueryRecorder, ns s
 		}
 	}
 
-	err := gatherPodLogs(kubeClient, ns, opts, cfg)
-	if err != nil {
-		return err
+	visitedPods := make(map[string]bool)
+
+	for _, filedSelector := range cfg.Limits.PodLogs.FieldSelectors {
+		opts.FieldSelector = filedSelector
+		err := gatherPodLogs(kubeClient, ns, opts, cfg, visitedPods)
+		if err != nil {
+			return err
+		}
 	}
+
 	duration := time.Since(start)
-	recorder.RecordQuery("PodLogs", ns, duration, err)
+	recorder.RecordQuery("PodLogs", ns, duration, nil)
 	return nil
 }
 

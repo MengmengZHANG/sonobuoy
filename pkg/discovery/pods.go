@@ -63,7 +63,9 @@ func getPodLogOptions(cfg *config.Config) *v1.PodLogOptions {
 }
 
 // gatherPodLogs will loop through collecting pod logs and placing them into a directory tree
-func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListOptions, cfg *config.Config) error {
+func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListOptions, cfg *config.Config,
+	visitedPods map[string]bool) error {
+
 	// 1 - Collect the list of pods
 	podlist, err := kubeClient.CoreV1().Pods(ns).List(opts)
 	if err != nil {
@@ -76,6 +78,11 @@ func gatherPodLogs(kubeClient kubernetes.Interface, ns string, opts metav1.ListO
 	// 2 - Foreach pod, dump each of its containers' logs in a tree in the following location:
 	//   pods/:podname/logs/:containername.txt
 	for _, pod := range podlist.Items {
+		if _, ok := visitedPods[pod.SelfLink]; ok {
+			continue // skip visited pods
+		}
+		visitedPods[pod.SelfLink] = true
+
 		if pod.Status.Phase == v1.PodFailed && pod.Status.Reason == "Evicted" {
 			logrus.WithField("podName", pod.Name).Info("Skipping evicted pod.")
 			continue

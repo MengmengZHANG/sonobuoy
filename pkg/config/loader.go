@@ -19,6 +19,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -54,7 +55,9 @@ func LoadConfig() (*Config, error) {
 	defer jsonFile.Close()
 
 	b, err := ioutil.ReadAll(jsonFile)
+	logrus.Infoln("bytes: ", string(b))
 	err = json.Unmarshal(b, cfg)
+	logrus.Infoln("after unmarshal: ", cfg)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unmarshal config file %q", fpath)
 	}
